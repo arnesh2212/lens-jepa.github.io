@@ -8,44 +8,59 @@
   <meta property="og:title" content="Lens-LeJEPA: Self-Supervised Learning for Dark Matter Substructure">
   <meta property="og:description" content="My GSoC 2026 project with ML4SCI DeepLense.">
   <meta property="og:image" content="assets/img/hero.png">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ccircle cx=%2750%27 cy=%2750%27 r=%2744%27 fill=%27none%27 stroke=%27%23a4161a%27 stroke-width=%278%27/%3E%3Ccircle cx=%2750%27 cy=%2750%27 r=%2712%27 fill=%27%231b87b0%27/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;650;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
+  <script>try { var t = localStorage.getItem("theme"); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}</script>
   <script>window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]] }, svg: { fontCache: "global" } };</script>
   <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 </head>
 <body>
 
-<header class="topbar">
-  <div class="topbar-inner">
-    <a class="name" href="https://arnesh2212.github.io/">Arnesh</a>
-    <nav>
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="https://arnesh.me/" aria-label="Arnesh Batra, home">
+      <svg class="reactor" viewBox="0 0 100 100" aria-hidden="true">
+        <circle class="ring-outer" cx="50" cy="50" r="46" fill="none" stroke-width="4"/>
+        <g class="spin"><circle class="ring-arc" cx="50" cy="50" r="37" fill="none" stroke-width="2" stroke-dasharray="6 4.2"/></g>
+        <path class="tri" d="M50 24 L72.5 63 L27.5 63 Z" stroke-width="4" stroke-linejoin="round"/>
+        <circle class="core" cx="50" cy="50" r="10" stroke-width="2.5"/>
+        <circle class="core-dot" cx="50" cy="50" r="4.5"/>
+      </svg>
+      Arnesh Batra
+    </a>
+    <nav class="nav" aria-label="Links">
+      <a href="#method" class="hide-sm">Method</a>
+      <a href="#results" class="hide-sm">Results</a>
       <a href="https://github.com/arnesh2212/Lens-FM-DeepLense">Code</a>
-      <a href="https://github.com/arnesh2212">GitHub</a>
     </nav>
+    <button class="theme-btn" id="theme" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.39 5.39 0 0 1-4.4 2.26 5.4 5.4 0 0 1-3.14-9.8A9.6 9.6 0 0 0 12 3Z"/></svg>
+      <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>
+    </button>
   </div>
 </header>
 
-<main>
+<main class="wrap">
 <article>
 
 <header class="post-header">
+  <div class="kicker"><span class="dot"></span><span>Google Summer of Code 2026 · ML4SCI · DeepLense</span></div>
   <h1>Lens-LeJEPA: Self-Supervised Learning for Dark Matter Substructure</h1>
-  <p class="subtitle">My Google Summer of Code 2026 project with ML4SCI DeepLense.</p>
-  <div class="post-meta"><span>Arnesh</span><span>September 2026</span><span>15 min read</span></div>
+  <p class="lede">My Google Summer of Code 2026 project with ML4SCI DeepLense.</p>
+  <div class="post-meta"><span>Arnesh Batra</span><span>September 2026</span><span>15 min read</span></div>
 </header>
 
 <div class="hero"><img src="assets/img/hero.png" alt="Eight simulated strong lens images from the Model III test set, shown as glowing rings."></div>
 <p class="hero-caption">Simulated strong lenses from the DeepLense Model III test set.</p>
 
-<div class="project-card">
-  <dl>
-    <dt>Program</dt><dd>Google Summer of Code 2026</dd>
-    <dt>Organisation</dt><dd><a href="https://ml4sci.org/">ML4SCI</a> · <a href="https://github.com/ML4SCI/DeepLense">DeepLense</a></dd>
-    <dt>Code</dt><dd><a href="https://github.com/arnesh2212/Lens-FM-DeepLense">github.com/arnesh2212/Lens-FM-DeepLense</a></dd>
-  </dl>
-</div>
+<dl class="facts">
+  <dt>Program</dt><dd>Google Summer of Code 2026</dd>
+  <dt>Organisation</dt><dd><a href="https://ml4sci.org/">ML4SCI</a> · <a href="https://github.com/ML4SCI/DeepLense">DeepLense</a></dd>
+  <dt>Code</dt><dd><a href="https://github.com/arnesh2212/Lens-FM-DeepLense">github.com/arnesh2212/Lens-FM-DeepLense</a></dd>
+</dl>
 
 <div class="stats">
   <div class="stat"><div class="value">+11.0</div><div class="label">accuracy points from the lensing priors with 100 labels per class</div></div>
@@ -54,7 +69,7 @@
 </div>
 
 <nav class="toc">
-  <p>Contents</p>
+  <p class="label">Contents</p>
   <ol>
     <li><a href="#introduction">Introduction</a></li>
     <li><a href="#data">Data</a></li>
@@ -69,7 +84,7 @@
   </ol>
 </nav>
 
-<h2 id="introduction">1. Introduction</h2>
+<h2 id="introduction"><span class="num">01</span>Introduction</h2>
 
 <p>When a massive galaxy lies between us and a more distant one, its gravity bends the light from the far galaxy into arcs, sometimes into a full ring. This is strong gravitational lensing. The shape of these arcs depends on how the mass inside the lens is distributed, including small clumps of dark matter that we can't see directly. So lens images are one of the few places where we can test dark matter on small scales.</p>
 
@@ -79,12 +94,12 @@
 
 <p>The catch is that most SSL methods learn by comparing two augmented copies of an image, made with random crops, zooms and colour changes. For lenses, zooming is not harmless. It changes the apparent Einstein radius \(\theta_E\) (the radius of the ring), and the mass inside the ring grows as \(\theta_E^2\). So a model trained to ignore zoom is also trained to ignore mass. The LenSiam paper pointed this out, and it is where my project started.</p>
 
-<h2 id="data">2. Data</h2>
+<h2 id="data"><span class="num">02</span>Data</h2>
 
 <p>I used the public DeepLense simulations, made with <code>lenstronomy</code>. Every image has a lens galaxy in the centre and a lensed background galaxy around it. There are three classes: axion, CDM and no substructure. The classes differ only by small changes in the arcs.</p>
 
 <figure>
-  <img src="assets/img/figA_datasets.png" alt="Example lens images from Model I, II and III for the three classes, with a radial profile plot." loading="lazy">
+  <div class="frame"><img src="assets/img/figA_datasets.png" alt="Example lens images from Model I, II and III for the three classes, with a radial profile plot."></div>
   <figcaption><b>Figure 1.</b> Two examples per class from each dataset. I only used Model I for pretraining, and Models II and III for the downstream tasks. The plot on the right shows that the ring sits at a different radius in each dataset, so the pretrained model has to deal with a domain shift.</figcaption>
 </figure>
 
@@ -102,13 +117,13 @@
 
 <p>Two things about this data mattered a lot for my design. The lens is always centred and the blur is the same in every direction, so rotating an image by 90° or flipping it gives another valid image of the same system, with the same class and the same mass. And the useful signal is in the thin bright arcs; most of the image is empty sky. Axion images also come with the simulated axion mass (between \(10^{-24}\) and \(10^{-22}\) eV), which I used for a regression task.</p>
 
-<h2 id="baselines">3. Starting point</h2>
+<h2 id="baselines"><span class="num">03</span>Starting point</h2>
 
 <p>I started by setting up a benchmark. I pretrained a few SSL methods on Model I for 300 epochs and tested them on Model II with 100, 500, 1,000, 5,000 or all labels per class. The methods were I-JEPA, Lens-JEPA (an earlier DeepLense model built on I-JEPA) and LeJEPA, a recent method that doesn't need a teacher network. For comparison I trained supervised models: ResNet18, ViT, ViT-SD, Lensiformer and LensPINN.</p>
 
 <p>With a frozen encoder and a single linear layer on top, the best SSL model only got 72% on full Model II data, while ResNet18 got 99.99%. The features had useful information, but a linear layer could not get it out. Switching to LoRA adapters fixed most of this (on I-JEPA, 0.600 went up to 0.978), so I used adapters for everything after that.</p>
 
-<h2 id="failed">4. What did not work</h2>
+<h2 id="failed"><span class="num">04</span>What did not work</h2>
 
 <p>Before arriving at the final method, I tried a few other ideas.</p>
 
@@ -137,10 +152,10 @@
 
 <p>These pushed me towards something simpler: keep the model and training setup plain, and add the physics only through the loss.</p>
 
-<h2 id="method">5. Lens-LeJEPA</h2>
+<h2 id="method"><span class="num">05</span>Lens-LeJEPA</h2>
 
 <figure>
-  <img src="assets/img/fig1_method.png" alt="Diagram of Lens-LeJEPA: two views of an image pass through one ViT; three loss terms act on the outputs; the frozen encoder with rsLoRA serves three tasks." loading="lazy">
+  <div class="frame"><img src="assets/img/fig1_method.png" alt="Diagram of Lens-LeJEPA: two views of an image pass through one ViT; three loss terms act on the outputs; the frozen encoder with rsLoRA serves three tasks."></div>
   <figcaption><b>Figure 2.</b> (a) The same ViT-S/16 encodes two versions of an unlabelled image. They differ only by blur, noise and a rotation or flip. Two of the three loss terms are mine. (b) After pretraining, the encoder is frozen and each task gets a small rsLoRA adapter.</figcaption>
 </figure>
 
@@ -172,7 +187,7 @@
 
 <p>None of this needs labels or a lens model. If I turn both terms off, I get back plain LeJEPA, so I could run a clean comparison: the same ViT-S/16, trained for 100 epochs on Model I with the same settings, with and without the two terms.</p>
 
-<h2 id="adaptation">6. Adapting the encoder</h2>
+<h2 id="adaptation"><span class="num">06</span>Adapting the encoder</h2>
 
 <p>After pretraining, I froze the encoder and added LoRA adapters to all 48 linear layers. I picked the LoRA rank using only the Model II validation set, and used rank 32 for every run after that.</p>
 
@@ -187,18 +202,18 @@
 <p>I also tried seven types of adapters and full fine-tuning. Rank-stabilized LoRA (rsLoRA) worked best. The only difference from normal LoRA is that it scales the update by \(\alpha/\sqrt{r}\) instead of \(\alpha/r\). At rank 32 it trains 2.36M parameters.</p>
 
 <figure>
-  <img src="assets/img/chart_adapters.png" alt="Mean test accuracy per adapter: full fine-tuning 0.810, rsLoRA 0.808, LoRA+ 0.798, LoRA 0.786, DoRA 0.786, gated LoRA 0.786, layerwise LoRA 0.771, LoHA 0.736." loading="lazy">
+  <div class="frame"><img src="assets/img/chart_adapters.png" alt="Mean test accuracy per adapter: full fine-tuning 0.810, rsLoRA 0.808, LoRA+ 0.798, LoRA 0.786, DoRA 0.786, gated LoRA 0.786, layerwise LoRA 0.771, LoHA 0.736."></div>
   <figcaption><b>Figure 3.</b> Average test accuracy over six settings (Model II with 100, 500, 1k, 5k and all labels, and Model III). rsLoRA was the best adapter in all six, and almost as good as full fine-tuning while training about 9× fewer parameters.</figcaption>
 </figure>
 
 <p>rsLoRA wasn't faster per training step than full fine-tuning (122 ms vs 102 ms), since gradients still pass through the whole network. The benefit is memory and storage: one shared encoder, and a small adapter for each task.</p>
 
-<h2 id="results">7. Results</h2>
+<h2 id="results"><span class="num">07</span>Results</h2>
 
 <h3>Classification</h3>
 
 <figure>
-  <img src="assets/img/chart_label_efficiency.png" alt="Test accuracy on Model II versus labels per class. Lens-LeJEPA is above LeJEPA at every budget; I-JEPA with 3x the training is highest between 500 and 5k labels." loading="lazy">
+  <div class="frame"><img src="assets/img/chart_label_efficiency.png" alt="Test accuracy on Model II versus labels per class. Lens-LeJEPA is above LeJEPA at every budget; I-JEPA with 3x the training is highest between 500 and 5k labels."></div>
   <figcaption><b>Figure 4.</b> Test accuracy on Model II as the number of labels grows. All models use a frozen encoder with a rank-32 adapter, so the gap between the blue and orange lines comes only from the two loss terms. I-JEPA and Lens-JEPA were trained 3× longer, so they are shown for reference.</figcaption>
 </figure>
 
@@ -242,7 +257,7 @@
 <p>The frozen encoder works (R² = 0.937 on Model II), but ResNet18 is about 5× more accurate. Here the two terms don't clearly help: with the same adapter, Lens-LeJEPA is worse than LeJEPA on Model II and better on Model III.</p>
 
 <figure>
-  <img src="assets/img/figF_regression.png" alt="Predicted versus true log axion mass for Lens-LeJEPA and ResNet18, and error by mass decile." loading="lazy">
+  <div class="frame"><img src="assets/img/figF_regression.png" alt="Predicted versus true log axion mass for Lens-LeJEPA and ResNet18, and error by mass decile."></div>
   <figcaption><b>Figure 5.</b> Predicted vs. true mass, and the error for each mass range. The error of Lens-LeJEPA grows about 4× from the lightest to the heaviest axions.</figcaption>
 </figure>
 
@@ -253,39 +268,39 @@
 <p>For this task I shrink each 64 × 64 image to 32 × 32 and train a small decoder on top of the encoder to rebuild it. Since the dataset has no real low/high-resolution pairs, this measures image reconstruction, not a physical resolution gain.</p>
 
 <figure>
-  <img src="assets/img/fig5_sr_examples.png" alt="A Model II test lens: target and reconstructions by LeJEPA, Lens-LeJEPA, bicubic and RCAN, each with an error map." loading="lazy">
-  <figcaption><b>Figure 6.</b> Reconstructions of one test image, each followed by its error map. RCAN, trained from scratch with the same budget, did not converge.</figcaption>
+  <div class="frame"><img src="assets/img/fig5_sr_examples.png" alt="A Model II test lens: target and reconstructions by LeJEPA, Lens-LeJEPA, bicubic and RCAN, each with an error map."></div>
+  <figcaption><b>Figure 6.</b> Reconstructions of one test image, each followed by its error map. RCAN, a supervised network trained from scratch on the same data, is almost error-free.</figcaption>
 </figure>
 
 <div class="table-wrap">
 <table>
   <thead><tr><th>PSNR (dB) ↑</th><th>Model II</th><th>Model III</th></tr></thead>
   <tbody>
-    <tr><td>LeJEPA + LoRA</td><td><strong>48.32</strong></td><td><strong>45.38</strong></td></tr>
+    <tr><td>RCAN (supervised, from scratch)</td><td><strong>65.12</strong></td><td><strong>61.41</strong></td></tr>
+    <tr><td>LeJEPA + LoRA</td><td>48.32</td><td>45.38</td></tr>
     <tr class="mine"><td>Lens-LeJEPA + LoRA</td><td>44.70</td><td>42.50</td></tr>
     <tr><td>Bicubic</td><td>41.07</td><td>40.27</td></tr>
-    <tr><td>RCAN (from scratch)</td><td>19.49</td><td>19.01</td></tr>
   </tbody>
 </table>
 </div>
 <p class="table-caption">Table 5. Super-resolution quality.</p>
 
-<p>Both pretrained encoders beat bicubic, but here the two terms cost 3.6 dB.</p>
+<p>Both pretrained encoders beat bicubic, but a supervised RCAN trained on the same data is far better, just like the supervised models on the other two tasks. Between the two encoders, the lensing terms cost 3.6 dB, the opposite of what they do for classification.</p>
 
-<h2 id="discussion">8. Discussion</h2>
+<h2 id="discussion"><span class="num">08</span>Discussion</h2>
 
 <p>At first these results confused me: the same loss helps classification, hurts super-resolution and doesn't help regression. My explanation is that the two terms make the model invariant to rotation, blur and noise. For classification that is what we want, since the class doesn't depend on how the telescope was rotated. Super-resolution needs every pixel, and mass regression needs the finest texture, so throwing that information away hurts them.</p>
 
 <p>You can already see this during pretraining. Lens-LeJEPA ends up with a lower effective rank than LeJEPA (0.164 vs 0.213), meaning its features are more compressed. Neither run collapsed, and both lensing terms went down steadily during training.</p>
 
 <figure>
-  <img src="assets/img/figB_pretraining_top.png" alt="Training curves over 100 epochs for LeJEPA (teal) and Lens-LeJEPA (red)." loading="lazy">
+  <div class="frame"><img src="assets/img/figB_pretraining_top.png" alt="Training curves over 100 epochs for LeJEPA (teal) and Lens-LeJEPA (red)."></div>
   <figcaption><b>Figure 7.</b> Pretraining curves for LeJEPA (teal) and Lens-LeJEPA (red). Both train stably. The effective rank panel (middle left) shows Lens-LeJEPA's features are more compressed.</figcaption>
 </figure>
 
 <p>So which encoder to use depends on the task: Lens-LeJEPA for classification and lens finding, and plain LeJEPA for predicting continuous quantities like mass.</p>
 
-<h2 id="future">9. Future work</h2>
+<h2 id="future"><span class="num">09</span>Future work</h2>
 
 <ul>
   <li>Everything here is simulated. The next step is to pretrain on real survey images and test on known real lenses.</li>
@@ -295,7 +310,7 @@
   <li>I only ran regression and super-resolution with all labels. It would be interesting to see what happens with fewer.</li>
 </ul>
 
-<h2 id="code">10. Code</h2>
+<h2 id="code"><span class="num">10</span>Code</h2>
 
 <a class="code-link" href="https://github.com/arnesh2212/Lens-FM-DeepLense">
   <svg width="28" height="28" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
@@ -324,8 +339,20 @@
 </main>
 
 <footer>
-  <div>Arnesh · Google Summer of Code 2026 with <a href="https://ml4sci.org/">ML4SCI</a></div>
+  <div class="wrap">
+    <span>Arnesh Batra · GSoC 2026 with <a href="https://ml4sci.org/">ML4SCI</a></span>
+    <span><a href="https://arnesh.me/">arnesh.me</a> · <a href="https://github.com/arnesh2212">GitHub</a></span>
+  </div>
 </footer>
+
+<script>
+  document.getElementById("theme").addEventListener("click", function () {
+    var root = document.documentElement;
+    var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("theme", next); } catch (e) {}
+  });
+</script>
 
 </body>
 </html>
