@@ -3,186 +3,178 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GSoC 2026: Lens-LeJEPA</title>
-  <meta name="description" content="My Google Summer of Code 2026 project with ML4SCI DeepLense: geometry-aware self-supervised pretraining for dark matter substructure in strong lensing images.">
+  <title>Lens-LeJEPA · GSoC 2026</title>
+  <meta name="description" content="My Google Summer of Code 2026 project with ML4SCI DeepLense: self-supervised pretraining for dark matter substructure in strong lensing images.">
+  <meta property="og:title" content="Lens-LeJEPA: Self-Supervised Learning for Dark Matter Substructure">
+  <meta property="og:description" content="My GSoC 2026 project with ML4SCI DeepLense.">
+  <meta property="og:image" content="assets/img/hero.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,650;1,8..60,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;650;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
-  <script>
-    window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]] }, svg: { fontCache: "global" } };
-  </script>
+  <script>window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]] }, svg: { fontCache: "global" } };</script>
   <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 </head>
 <body>
-<main>
 
-<header class="post-header">
-  <div class="kicker">Google Summer of Code 2026 · ML4SCI · DeepLense</div>
-  <h1>The Einstein radius is not an augmentation</h1>
-  <p class="subtitle">How I built a self-supervised foundation model for dark matter substructure, what worked, and the many things that did not.</p>
-  <div class="byline">Arnesh · September 2026 · <a href="#code">Code</a> · <a href="#refs">References</a></div>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="name" href="https://arnesh2212.github.io/">Arnesh</a>
+    <nav>
+      <a href="https://github.com/arnesh2212/Lens-FM-DeepLense">Code</a>
+      <a href="https://github.com/arnesh2212">GitHub</a>
+    </nav>
+  </div>
 </header>
 
-<div class="tldr">
-  <h3>TL;DR</h3>
-  <ul>
-    <li>I pretrained one Vision Transformer on <strong>87,525 unlabelled</strong> simulated lens images, froze it, and reused it for three tasks: substructure classification, axion mass regression and 2× super-resolution.</li>
-    <li>Normal self-supervised tricks like crop and zoom are <em>physically wrong</em> for lenses: zooming changes the Einstein radius, which measures the lens mass. So I replaced them with two lensing-aware loss terms on top of LeJEPA. I call the result <strong>Lens-LeJEPA</strong>.</li>
-    <li>With 100 labels per class the two terms add <strong>+11 accuracy points</strong> over the exact same model without them. With rank-stabilized LoRA the frozen encoder reaches <strong>97.7%</strong> on full data while training only 11% of the weights.</li>
-    <li>It is not a win everywhere. The same terms <strong>hurt</strong> super-resolution (−3.6 dB) and do not help mass regression. I think one simple idea explains both the wins and the losses.</li>
-  </ul>
+<main>
+<article>
+
+<header class="post-header">
+  <h1>Lens-LeJEPA: Self-Supervised Learning for Dark Matter Substructure</h1>
+  <p class="subtitle">My Google Summer of Code 2026 project with ML4SCI DeepLense.</p>
+  <div class="post-meta"><span>Arnesh</span><span>September 2026</span><span>15 min read</span></div>
+</header>
+
+<div class="hero"><img src="assets/img/hero.png" alt="Eight simulated strong lens images from the Model III test set, shown as glowing rings."></div>
+<p class="hero-caption">Simulated strong lenses from the DeepLense Model III test set.</p>
+
+<div class="project-card">
+  <dl>
+    <dt>Program</dt><dd>Google Summer of Code 2026</dd>
+    <dt>Organisation</dt><dd><a href="https://ml4sci.org/">ML4SCI</a> · <a href="https://github.com/ML4SCI/DeepLense">DeepLense</a></dd>
+    <dt>Code</dt><dd><a href="https://github.com/arnesh2212/Lens-FM-DeepLense">github.com/arnesh2212/Lens-FM-DeepLense</a></dd>
+  </dl>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="value">+11.0</div><div class="label">accuracy points from the lensing priors with 100 labels per class</div></div>
+  <div class="stat"><div class="value">97.7%</div><div class="label">test accuracy on Model II with a frozen encoder</div></div>
+  <div class="stat"><div class="value">2.36M</div><div class="label">trainable parameters per task, 11% of the encoder</div></div>
 </div>
 
 <nav class="toc">
-  <strong>Contents</strong>
+  <p>Contents</p>
   <ol>
-    <li><a href="#why">Why this problem</a></li>
-    <li><a href="#data">The data</a></li>
-    <li><a href="#start">Where I started</a></li>
+    <li><a href="#introduction">Introduction</a></li>
+    <li><a href="#data">Data</a></li>
+    <li><a href="#baselines">Starting point</a></li>
     <li><a href="#failed">What did not work</a></li>
-    <li><a href="#method">The idea that worked: Lens-LeJEPA</a></li>
-    <li><a href="#adapt">Using the frozen encoder</a></li>
-    <li><a href="#results">Results on three tasks</a></li>
-    <li><a href="#lesson">The one lesson behind all of it</a></li>
-    <li><a href="#code">The code</a></li>
-    <li><a href="#next">Limitations and what comes next</a></li>
+    <li><a href="#method">Lens-LeJEPA</a></li>
+    <li><a href="#adaptation">Adapting the encoder</a></li>
+    <li><a href="#results">Results</a></li>
+    <li><a href="#discussion">Discussion</a></li>
+    <li><a href="#future">Future work</a></li>
+    <li><a href="#code">Code</a></li>
   </ol>
 </nav>
 
-<h2 id="why">1. Why this problem</h2>
+<h2 id="introduction">1. Introduction</h2>
 
-<p>When a massive galaxy sits between us and a more distant galaxy, its gravity bends the light of the far one into arcs, and sometimes into a full ring. This is <strong>strong gravitational lensing</strong>. The exact shape of those arcs depends on how mass is spread inside the lens, including small clumps of dark matter that we cannot see directly. That makes lens images one of the very few ways to test dark matter on small scales.</p>
+<p>When a massive galaxy lies between us and a more distant one, its gravity bends the light from the far galaxy into arcs, sometimes into a full ring. This is strong gravitational lensing. The shape of these arcs depends on how the mass inside the lens is distributed, including small clumps of dark matter that we can't see directly. So lens images are one of the few places where we can test dark matter on small scales.</p>
 
-<p>Different dark matter models leave different marks. In <strong>cold dark matter (CDM)</strong> the main halo contains many small subhaloes. In models with an <strong>ultra-light axion</strong>, the dark matter behaves like a wave and forms vortex-like interference patterns. The DeepLense project asks: can a neural network tell these apart from the image alone?</p>
+<p>Different dark matter models leave slightly different marks. In cold dark matter (CDM), the main halo is full of small subhaloes. If dark matter is an ultra-light axion, it behaves like a wave and creates vortex-like patterns. The DeepLense project tries to tell these apart from images alone.</p>
 
-<p>Supervised networks already do this very well on simulations. The catch is labels. To label an image, a simulation first has to <em>assume</em> a dark matter model. And upcoming surveys like Euclid will give us huge numbers of lens images with no labels at all. That is exactly the setting where <strong>self-supervised learning (SSL)</strong> should help: learn from unlabelled images first, then use a small number of labels later.</p>
+<p>Supervised models already do this well on simulated data, but they need labels, and every label comes from a simulation that assumed a dark matter model in the first place. Surveys like Euclid will give us a huge number of lens images with no labels. That is where self-supervised learning (SSL) makes sense: learn from unlabelled images first, then fine-tune with a few labels.</p>
 
-<p>But there is a problem with how SSL is usually done. Most methods learn by making two "views" of an image with random crops, zooms and colour changes, and then teaching the network that both views are the same thing. For a lens, a zoom is not harmless. It changes the apparent <strong>Einstein radius</strong> \(\theta_E\), the radius of the ring, and the mass inside the ring grows like \(\theta_E^2\). An encoder trained to ignore zoom is being trained to throw away a mass measurement. This point was first made by the LenSiam paper, and it became the starting point for my project.</p>
+<p>The catch is that most SSL methods learn by comparing two augmented copies of an image, made with random crops, zooms and colour changes. For lenses, zooming is not harmless. It changes the apparent Einstein radius \(\theta_E\) (the radius of the ring), and the mass inside the ring grows as \(\theta_E^2\). So a model trained to ignore zoom is also trained to ignore mass. The LenSiam paper pointed this out, and it is where my project started.</p>
 
-<h2 id="data">2. The data</h2>
+<h2 id="data">2. Data</h2>
 
-<p>I used the public DeepLense simulations, made with <code>lenstronomy</code>. Each image has a lens galaxy in the centre and a background source that gets lensed. There are three classes: <strong>axion</strong>, <strong>CDM</strong>, and <strong>no substructure</strong>. The difference between classes is small: a slight change in the arcs, not a change in the overall ring.</p>
+<p>I used the public DeepLense simulations, made with <code>lenstronomy</code>. Every image has a lens galaxy in the centre and a lensed background galaxy around it. There are three classes: axion, CDM and no substructure. The classes differ only by small changes in the arcs.</p>
 
 <figure>
-  <img src="assets/img/figA_datasets.png" alt="Grid of example lens images from Model I, II and III for the three classes, with a radial profile plot on the right." loading="lazy">
-  <figcaption>Two examples per class from each dataset. Model I (which I use for pretraining) is noisier and at a different resolution from Models II and III (which I use for the downstream tasks). The right panel shows how the ring sits at a different radius in each dataset: this is the domain shift the frozen encoder has to survive.</figcaption>
+  <img src="assets/img/figA_datasets.png" alt="Example lens images from Model I, II and III for the three classes, with a radial profile plot." loading="lazy">
+  <figcaption><b>Figure 1.</b> Two examples per class from each dataset. I only used Model I for pretraining, and Models II and III for the downstream tasks. The plot on the right shows that the ring sits at a different radius in each dataset, so the pretrained model has to deal with a domain shift.</figcaption>
 </figure>
 
 <div class="table-wrap">
 <table>
-  <thead><tr><th>Dataset</th><th>Size</th><th>Images</th><th>How I used it</th></tr></thead>
+  <thead><tr><th>Dataset</th><th>Image size</th><th>Train</th><th>Test</th><th>Used for</th></tr></thead>
   <tbody>
-    <tr><td>Model I</td><td>150 × 150</td><td>87,525</td><td>Pretraining only, labels never read</td></tr>
-    <tr><td>Model II (Euclid-like)</td><td>64 × 64</td><td>89,104 train · 15,000 test</td><td>Downstream, few-shot and full data</td></tr>
-    <tr><td>Model III (HST-like)</td><td>64 × 64</td><td>89,396 train · 15,000 test</td><td>Downstream, full data</td></tr>
+    <tr><td>Model I</td><td>150 × 150</td><td>87,525</td><td>–</td><td>pretraining (no labels)</td></tr>
+    <tr><td>Model II (Euclid-like)</td><td>64 × 64</td><td>89,104</td><td>15,000</td><td>all three tasks</td></tr>
+    <tr><td>Model III (HST-like)</td><td>64 × 64</td><td>89,396</td><td>15,000</td><td>all three tasks</td></tr>
   </tbody>
 </table>
 </div>
+<p class="table-caption">Table 1. Datasets. All results in this post are on the held-out test sets.</p>
 
-<p>Two facts about this data shaped my whole design. First, the lens is always in the centre and the simulated blur (the point spread function) is the same in every direction. So rotating the image by 90° or mirroring it gives an equally valid observation of the <em>same</em> system: same class, same Einstein radius, same mass. Second, the useful signal lives in the thin bright arcs near the Einstein radius. The rest of the image is mostly empty sky.</p>
+<p>Two things about this data mattered a lot for my design. The lens is always centred and the blur is the same in every direction, so rotating an image by 90° or flipping it gives another valid image of the same system, with the same class and the same mass. And the useful signal is in the thin bright arcs; most of the image is empty sky. Axion images also come with the simulated axion mass (between \(10^{-24}\) and \(10^{-22}\) eV), which I used for a regression task.</p>
 
-<p>Axion images also store the simulated axion mass, between \(10^{-24}\) and \(10^{-22}\) eV. I used \(\log_{10}(m/\text{eV})\) as the target for a regression task. Every result in this post is on the official held-out test sets, which I only touched once, at the very end of each run.</p>
+<h2 id="baselines">3. Starting point</h2>
 
-<h2 id="start">3. Where I started</h2>
+<p>I started by setting up a benchmark. I pretrained a few SSL methods on Model I for 300 epochs and tested them on Model II with 100, 500, 1,000, 5,000 or all labels per class. The methods were I-JEPA, Lens-JEPA (an earlier DeepLense model built on I-JEPA) and LeJEPA, a recent method that doesn't need a teacher network. For comparison I trained supervised models: ResNet18, ViT, ViT-SD, Lensiformer and LensPINN.</p>
 
-<p>I began by building a benchmark: pretrain several SSL methods on Model I for 300 epochs, then check how well each one does on Model II with 100, 500, 1,000, 5,000 or all labels per class. I included:</p>
-
-<ul>
-  <li><strong>I-JEPA</strong>, which masks parts of the image and predicts the hidden parts in feature space, using a slowly updated "teacher" copy of the network;</li>
-  <li><strong>Lens-JEPA</strong>, an earlier DeepLense model that adds a lensing-inspired physics branch to I-JEPA;</li>
-  <li><strong>LeJEPA</strong>, a recent method from Balestriero and LeCun that needs no teacher at all (more on this below);</li>
-  <li>strong <strong>supervised</strong> baselines: ResNet18, ViT, ViT-SD, Lensiformer and LensPINN.</li>
-</ul>
-
-<p>The first result was humbling. With a frozen encoder and a linear classifier on top (a "linear probe"), the best SSL model reached only <strong>72%</strong> on full Model II data (LeJEPA), and I-JEPA reached 60%. A supervised ResNet18 got 99.99%. The SSL features were clearly not useless, but a single linear layer could not read them out.</p>
+<p>With a frozen encoder and a single linear layer on top, the best SSL model only got 72% on full Model II data, while ResNet18 got 99.99%. The features had useful information, but a linear layer could not get it out. Switching to LoRA adapters fixed most of this (on I-JEPA, 0.600 went up to 0.978), so I used adapters for everything after that.</p>
 
 <h2 id="failed">4. What did not work</h2>
 
-<p>I want to be honest about this part, because most of my summer was spent here. Each of these taught me something that ended up in the final method.</p>
+<p>Before arriving at the final method, I tried a few other ideas.</p>
 
-<ul class="fail-list">
-  <li>
-    <span class="tag">Dead end · linear probes</span>
-    Frozen probes were far too weak to judge an encoder. On the same I-JEPA encoder, a linear probe got 0.600 on full Model II, while a LoRA adapter got <strong>0.978</strong>. Worse, the ranking changed: Lens-JEPA-Sym looked best under the probe at four of six settings, but I-JEPA beat it by more than ten points once adapters were allowed.
-    <span class="lesson">Lesson: always evaluate a foundation model with the adaptation you will really use.</span>
-  </li>
-  <li>
-    <span class="tag">No gain · saliency-weighted loss (Lens-JEPA-Focus)</span>
-    I weighted the I-JEPA prediction loss towards patches with strong edges and curvature, hoping the model would focus on arcs. It never beat plain Lens-JEPA at any label budget.
-    <span class="lesson">Lesson: telling the model <em>where</em> to look is not enough. The arc detector came back later, but as a way to pool features, not to weight a loss.</span>
-  </li>
-  <li>
-    <span class="tag">Partial · a global symmetry loss (Lens-JEPA-Sym)</span>
-    I added a loss that makes the <em>pooled</em> feature of an image match the pooled feature of its rotated or mirrored copy. It helped Lens-JEPA (0.866 vs 0.830 at full data with LoRA) but the gain was small.
-    <span class="lesson">Lesson: pooling throws away <em>which patch went where</em>. Keeping that correspondence exact became Prior 1 of the final method.</span>
-  </li>
-  <li>
-    <span class="tag">Bug · a collapsed ViT-Base run</span>
-    My first ViT-Base I-JEPA run collapsed after two epochs: its effective rank fell from 0.023 to 0.019, meaning all images were being mapped to nearly the same feature. The cause was embarrassing: I had copied the reference learning rate of 1e-3, which was tuned for a batch of 2,048, into a batch of 128. After fixing it the run was stable, but at 3.4 minutes per epoch it needed about 17 hours for 300 epochs, so I paused it at epoch 181.
-    <span class="lesson">Lesson: add automatic collapse checks. Every run in my final code records feature spread and effective rank each epoch and refuses to save a collapsed checkpoint.</span>
-  </li>
-  <li>
-    <span class="tag">Failed · Lens-Prism-JEPA, the "everything" model</span>
-    This was my most ambitious attempt: an 86M-parameter ViT-Base with a hard-coded rotation-equivariant tokenizer, a geometry adapter, arc-aware masking, extra morphology targets and a SIGReg term. Version 1 had a bug in spirit: its morphology target was almost the same for every image, so that loss just went to zero. After fixing that, the full 300-epoch version 3 finished, and downstream it was poor: <strong>0.333</strong> accuracy with full Model II data (chance level) and 0.69 with 5,000 labels per class.
-    <span class="lesson">Lesson: too many new parts at once, and I could not tell which one broke it. Next time, one change per run.</span>
-  </li>
-  <li>
-    <span class="tag">Stopped early · two more variants</span>
-    <em>Lens-LeJEPA+</em> (a 300-epoch run with an extra angular-harmonic term) stopped at epoch 29 of 300 and was never evaluated. <em>Lens-LeJEPA-Context</em> (masked prediction plus lensing terms) kept its pooled effective rank around 0.02–0.03 for several epochs, below my 0.04 collapse threshold, so it was stopped at epoch 21.
-    <span class="lesson">Lesson: the simple version is the one worth finishing properly.</span>
-  </li>
-  <li>
-    <span class="tag">Data problem · Models IV, V and A</span>
-    On Models IV and V every method, supervised or not, sat at chance (about 0.34 and 0.51 accuracy, AUROC ≈ 0.50). That points to a split or label problem, not to the models, so I dropped them. For Model A, the public training release was incomplete: the shards I could download had 10,000 axion, 1,564 CDM and <strong>zero</strong> WDM images, so a fair three-class result was impossible.
-    <span class="lesson">Lesson: when every model fails the same way, check the data before the model.</span>
-  </li>
-</ul>
+<div class="ideas">
+  <div class="idea">
+    <span class="result">No improvement</span>
+    <h4>Focusing the loss on arcs</h4>
+    <p>I weighted the I-JEPA loss towards patches with strong edges and curvature. It never beat plain Lens-JEPA at any label budget.</p>
+  </div>
+  <div class="idea">
+    <span class="result">Small improvement</span>
+    <h4>A global rotation loss</h4>
+    <p>I asked the average feature of an image to match that of its rotated copy. It helped only a little (0.866 vs 0.830 at full data), because averaging loses where each patch went.</p>
+  </div>
+  <div class="idea">
+    <span class="result">Failed</span>
+    <h4>Lens-Prism-JEPA</h4>
+    <p>A large ViT-Base with a built-in rotation-equivariant tokenizer, arc-aware masking and extra shape targets. After 300 epochs it was at chance on full Model II. I had changed too many things at once to tell what went wrong.</p>
+  </div>
+  <div class="idea">
+    <span class="result">Collapsed</span>
+    <h4>Masked prediction with lensing terms</h4>
+    <p>I added my lensing terms to a masked-prediction objective. The features stayed very low-rank, so I stopped the run after 21 epochs.</p>
+  </div>
+</div>
 
-<h2 id="method">5. The idea that worked: Lens-LeJEPA</h2>
+<p>These pushed me towards something simpler: keep the model and training setup plain, and add the physics only through the loss.</p>
 
-<p>After all that, I went back to the simplest strong baseline and asked a narrower question: <em>if I only change the loss, and put the physics in there, does it help?</em></p>
+<h2 id="method">5. Lens-LeJEPA</h2>
 
 <figure>
-  <img src="assets/img/fig1_method.png" alt="Diagram: an input lens image goes through two branches (blur plus noise, and a D4 rotation then blur plus noise), both into the same ViT-S/16. The patch-token maps feed three losses: LeJEPA base loss, the D4 loss and the ring loss. Right: the frozen encoder with rsLoRA serves classification, regression and super-resolution." loading="lazy">
-  <figcaption><strong>Lens-LeJEPA.</strong> (a) One ViT-S/16 encodes two views of the same unlabelled image. The views differ only by lens-safe changes and a rotation or mirror. Two of the three loss terms are mine. (b) After pretraining the encoder is frozen and each task gets its own small rsLoRA adapter.</figcaption>
+  <img src="assets/img/fig1_method.png" alt="Diagram of Lens-LeJEPA: two views of an image pass through one ViT; three loss terms act on the outputs; the frozen encoder with rsLoRA serves three tasks." loading="lazy">
+  <figcaption><b>Figure 2.</b> (a) The same ViT-S/16 encodes two versions of an unlabelled image. They differ only by blur, noise and a rotation or flip. Two of the three loss terms are mine. (b) After pretraining, the encoder is frozen and each task gets a small rsLoRA adapter.</figcaption>
 </figure>
 
-<h3>The base: LeJEPA</h3>
+<h3>Base: LeJEPA</h3>
 
-<p>LeJEPA is nice because it is simple. There is no teacher network, no moving average and no stop-gradient. Both views go through the <em>same</em> ViT, the patch tokens are averaged and passed through a small projector, and the loss has two parts: pull the two views together, and keep the cloud of all embeddings shaped like an isotropic Gaussian (a term called SIGReg). The second part is what stops the model from cheating by mapping everything to one point.</p>
+<p>I built on LeJEPA because it is simple. It has no teacher network and no stop-gradient. Both views go through the same ViT, the patch features are averaged and projected, and the loss does two things: it pulls the two views together, and a term called SIGReg keeps the embeddings spread out like a Gaussian, so the model can't collapse everything to a single point.</p>
 
-<p>\[ \mathcal{L}_{\text{base}} = (1-\lambda)\,\mathcal{L}_{\text{inv}} + \lambda\,\mathcal{L}_{\text{SIGReg}}, \qquad \lambda = 0.02 \]</p>
+<div class="equation">\[ \mathcal{L}_{\text{base}} = (1-\lambda)\,\mathcal{L}_{\text{inv}} + \lambda\,\mathcal{L}_{\text{SIGReg}}, \qquad \lambda = 0.02 \]</div>
 
-<p>Because the base loss only sees the <em>averaged</em> feature, the image geometry is lost there. My two extra terms work on the full grid of patch tokens, where the geometry is still visible.</p>
+<p>This loss only looks at the averaged feature, so it loses where things are in the image. My two extra terms work on the individual patch features instead.</p>
 
-<h3>Lens-safe views</h3>
+<h3>Augmentations</h3>
 
-<p>I only allow changes that a telescope could really produce for the same system: a small Gaussian blur (at most about one pixel, like a slightly different point spread function) and a little detector noise. No crop, no zoom, no rescale, since they all change the Einstein radius. No translation either, because both of my priors assume the lens is centred.</p>
+<p>I only used changes that could come from a real telescope looking at the same system: a small blur (up to about one pixel) and a bit of noise. No crop, zoom or resize, because those change the Einstein radius, and no shifting, because both of my extra terms assume the lens is in the centre.</p>
 
-<h3>Prior 1: exact rotation and mirror correspondence</h3>
+<h3>Prior 1: matching rotated patches</h3>
 
-<p>The one "big" change that <em>is</em> safe is rotating the detector. So before making the second view, I apply a random element \(g\) of \(D_4\), the group of the eight 90° rotations and mirror images of a square.</p>
+<p>Rotating or flipping the image is safe, so before making the second view I apply one of the 8 rotations and flips of a square (the group \(D_4\)). The image is 160 × 160 pixels and each patch is 16 × 16, so the patches form a 10 × 10 grid. When the image is rotated, every patch lands exactly on another patch position. That means I know which patch in the rotated image came from which patch in the original, and I can compare them one by one:</p>
 
-<p>Here is the neat part. The image is 160 × 160 pixels and the patches are 16 × 16, so the grid is exactly 10 × 10. A 90° rotation or a mirror of the image then moves <em>whole patches onto whole patches</em>. Patch 7 of the rotated image contains exactly the pixels of some patch \(\pi_g(7)\) of the original. So instead of asking "is the whole image the same after rotation?", I can ask the much stronger question "does each patch token match the token of the patch it came from?":</p>
+<div class="equation">\[ \mathcal{L}_{D_4} = \text{smooth}_{L_1}\big(\text{LN}(z_B),\ \text{LN}(z_A[\pi_g])\big) \]</div>
 
-<p>\[ \mathcal{L}_{D_4} = \text{smooth}_{L_1}\big(\text{LN}(z_B),\ \text{LN}(z_A[\pi_g])\big) \]</p>
+<p>Here \(\pi_g\) is that patch mapping. This is the part my earlier global rotation loss was missing.</p>
 
-<p>This permutation is exact, not approximate. I proved it in the paper's appendix and the code checks it pixel for pixel in the unit tests. This is the difference from my earlier Lens-JEPA-Sym attempt, which only compared pooled features.</p>
+<h3>Prior 2: matching rings around the lens</h3>
 
-<h3>Prior 2: arc-weighted ring consistency</h3>
+<p>The first term only makes sure information ends up in the right place. It says nothing about the shape of the arcs, which is where the dark matter signal is. So I divide the patch grid into three rings around the centre and average the patch features inside each ring. Each patch is weighted by how much arc it contains, measured with the image gradient and Laplacian, so empty sky counts for less. Rotations don't change how far a patch is from the centre, so these ring features should be the same for both views. The full loss is:</p>
 
-<p>Prior 1 says <em>where</em> information should go, but not <em>what</em> the arcs look like, and the dark matter signal is a small change in arc shape. So I split the 10 × 10 patch grid into three rings around the centre. Inside each ring I average the tokens, but I weight every patch by a simple, label-free arc detector: the image gradient plus the Laplacian. Patches on a bright, curved arc count more than patches of empty sky.</p>
+<div class="equation">\[ \mathcal{L} = \mathcal{L}_{\text{base}} + 0.10\,\mathcal{L}_{D_4} + 0.10\,\mathcal{L}_{\text{ring}} \]</div>
 
-<p>A rotation or mirror never changes a patch's distance from the centre, so every ring maps onto itself. That means this ring descriptor should be the same for both views, and I ask for exactly that. The final loss is:</p>
+<p>None of this needs labels or a lens model. If I turn both terms off, I get back plain LeJEPA, so I could run a clean comparison: the same ViT-S/16, trained for 100 epochs on Model I with the same settings, with and without the two terms.</p>
 
-<p>\[ \mathcal{L} = \mathcal{L}_{\text{base}} + 0.10\,\mathcal{L}_{D_4} + 0.10\,\mathcal{L}_{\text{ring}} \]</p>
+<h2 id="adaptation">6. Adapting the encoder</h2>
 
-<p>Nothing here needs a label, a lens model or an Einstein radius. And because each prior is just one extra term, turning both off gives back plain LeJEPA exactly. That gave me a clean experiment: <strong>two runs that are identical in every way</strong> (same ViT-S/16, same 100 epochs on Model I, same views, same seed, same schedule) except for these two terms.</p>
-
-<h2 id="adapt">6. Using the frozen encoder</h2>
-
-<p>Since linear probes were too weak (section 4), I froze the encoder and added <strong>LoRA</strong> adapters: small low-rank updates inside every linear layer of the ViT, 48 layers in total. I chose the rank on the Model II <em>validation</em> split only, and then fixed it for every run:</p>
+<p>After pretraining, I froze the encoder and added LoRA adapters to all 48 linear layers. I picked the LoRA rank using only the Model II validation set, and used rank 32 for every run after that.</p>
 
 <div class="table-wrap">
 <table>
@@ -190,158 +182,129 @@
   <tbody><tr><td>Validation accuracy</td><td>0.925</td><td>0.953</td><td>0.966</td><td>0.972</td><td><strong>0.981</strong></td><td>0.960</td></tr></tbody>
 </table>
 </div>
+<p class="table-caption">Table 2. Choosing the LoRA rank on the Model II validation set.</p>
 
-<p>Then I compared seven adapter types, plus full fine-tuning, on the frozen Lens-LeJEPA encoder. The winner was <strong>rank-stabilized LoRA (rsLoRA)</strong>. It is a one-line change: normal LoRA scales the update by \(\alpha/r\), rsLoRA scales it by \(\alpha/\sqrt{r}\), so the update does not shrink when the rank grows. At rank 32 that is 2.36M trainable parameters, 11% of the encoder.</p>
-
-<figure>
-  <img src="assets/img/chart_adapters.png" alt="Dot plot of mean held-out accuracy per adapter: full fine-tuning 0.810, rsLoRA 0.808, LoRA+ 0.798, LoRA 0.786, DoRA 0.786, gated LoRA 0.786, layerwise LoRA 0.771, LoHA 0.736." loading="lazy">
-  <figcaption>Mean held-out accuracy over six settings (Model II at 100, 500, 1k, 5k and all labels, plus Model III full). rsLoRA was the best adapter in all six settings and is within 0.2 points of full fine-tuning on average, while training about 9× fewer parameters.</figcaption>
-</figure>
-
-<p>One thing surprised me: rsLoRA is <em>not</em> faster per step than full fine-tuning (122 ms vs 102 ms at batch 64 on my RTX A4500), because gradients still flow through the whole frozen network. The saving is in memory and in storage: one frozen backbone plus a small adapter file per task.</p>
-
-<h2 id="results">7. Results on three tasks</h2>
-
-<h3>Task 1: classifying dark matter substructure</h3>
+<p>I also tried seven types of adapters and full fine-tuning. Rank-stabilized LoRA (rsLoRA) worked best. The only difference from normal LoRA is that it scales the update by \(\alpha/\sqrt{r}\) instead of \(\alpha/r\). At rank 32 it trains 2.36M parameters.</p>
 
 <figure>
-  <img src="assets/img/chart_label_efficiency.png" alt="Line chart of held-out accuracy on Model II versus labels per class for five models. Lens-LeJEPA lines sit above LeJEPA at every budget; I-JEPA with 3x budget is highest between 500 and 5k labels." loading="lazy">
-  <figcaption>Label efficiency on Model II. Every curve uses a frozen encoder and a rank-32 adapter, so the gap between the blue and orange lines comes from the pretraining loss alone. I-JEPA and Lens-JEPA were pretrained for 3× longer (300 epochs) and are shown as references, not matched comparisons.</figcaption>
+  <img src="assets/img/chart_adapters.png" alt="Mean test accuracy per adapter: full fine-tuning 0.810, rsLoRA 0.808, LoRA+ 0.798, LoRA 0.786, DoRA 0.786, gated LoRA 0.786, layerwise LoRA 0.771, LoHA 0.736." loading="lazy">
+  <figcaption><b>Figure 3.</b> Average test accuracy over six settings (Model II with 100, 500, 1k, 5k and all labels, and Model III). rsLoRA was the best adapter in all six, and almost as good as full fine-tuning while training about 9× fewer parameters.</figcaption>
 </figure>
 
-<p>The fairest comparison is Lens-LeJEPA against LeJEPA with the <em>same</em> adapter (standard LoRA), because then the only difference is my two loss terms:</p>
+<p>rsLoRA wasn't faster per training step than full fine-tuning (122 ms vs 102 ms), since gradients still pass through the whole network. The benefit is memory and storage: one shared encoder, and a small adapter for each task.</p>
+
+<h2 id="results">7. Results</h2>
+
+<h3>Classification</h3>
+
+<figure>
+  <img src="assets/img/chart_label_efficiency.png" alt="Test accuracy on Model II versus labels per class. Lens-LeJEPA is above LeJEPA at every budget; I-JEPA with 3x the training is highest between 500 and 5k labels." loading="lazy">
+  <figcaption><b>Figure 4.</b> Test accuracy on Model II as the number of labels grows. All models use a frozen encoder with a rank-32 adapter, so the gap between the blue and orange lines comes only from the two loss terms. I-JEPA and Lens-JEPA were trained 3× longer, so they are shown for reference.</figcaption>
+</figure>
+
+<p>To measure the effect of the two terms, I compared Lens-LeJEPA and LeJEPA with the same adapter:</p>
 
 <div class="table-wrap">
 <table>
-  <thead><tr><th>Model II accuracy</th><th>100</th><th>500</th><th>1k</th><th>5k</th><th>full</th><th>Model III full</th></tr></thead>
+  <thead><tr><th>Model II accuracy</th><th>100</th><th>500</th><th>1k</th><th>5k</th><th>full</th><th>Model III</th></tr></thead>
   <tbody>
-    <tr><td>LeJEPA + LoRA (no priors)</td><td>0.366</td><td>0.625</td><td>0.733</td><td>0.869</td><td>0.926</td><td>0.922</td></tr>
+    <tr><td>LeJEPA + LoRA</td><td>0.366</td><td>0.625</td><td>0.733</td><td>0.869</td><td>0.926</td><td>0.922</td></tr>
     <tr class="mine"><td>Lens-LeJEPA + LoRA</td><td>0.476</td><td>0.693</td><td>0.780</td><td>0.881</td><td>0.942</td><td>0.945</td></tr>
-    <tr><td>Gain from the two priors</td><td class="up">+11.0</td><td class="up">+6.8</td><td class="up">+4.6</td><td class="up">+1.2</td><td class="up">+1.7</td><td class="up">+2.4</td></tr>
-    <tr class="mine"><td>Lens-LeJEPA + rsLoRA (final)</td><td>0.482</td><td>0.719</td><td>0.797</td><td>0.899</td><td>0.977</td><td>0.974</td></tr>
-    <tr><td>I-JEPA + LoRA (3× budget)</td><td>0.431</td><td>0.846</td><td>0.896</td><td>0.931</td><td>0.978</td><td>0.991</td></tr>
-    <tr><td>Lens-JEPA + LoRA (3× budget)</td><td>0.347</td><td>0.435</td><td>0.496</td><td>0.679</td><td>0.830</td><td>0.813</td></tr>
+    <tr><td>Difference</td><td class="up">+11.0</td><td class="up">+6.8</td><td class="up">+4.6</td><td class="up">+1.2</td><td class="up">+1.7</td><td class="up">+2.4</td></tr>
+    <tr class="mine"><td>Lens-LeJEPA + rsLoRA</td><td>0.482</td><td>0.719</td><td>0.797</td><td>0.899</td><td>0.977</td><td>0.974</td></tr>
+    <tr><td>I-JEPA + LoRA (3× training)</td><td>0.431</td><td>0.846</td><td>0.896</td><td>0.931</td><td>0.978</td><td>0.991</td></tr>
+    <tr><td>Lens-JEPA + LoRA (3× training)</td><td>0.347</td><td>0.435</td><td>0.496</td><td>0.679</td><td>0.830</td><td>0.813</td></tr>
     <tr><td>ResNet18 (supervised)</td><td>0.600</td><td>0.896</td><td>0.986</td><td>0.998</td><td>1.000</td><td>1.000</td></tr>
     <tr><td>LensPINN (supervised)</td><td>0.910</td><td>0.984</td><td>0.995</td><td>0.999</td><td>1.000</td><td>1.000</td></tr>
   </tbody>
 </table>
 </div>
-<p class="table-note">Held-out accuracy. Column headers are labelled training images per class. Points are accuracy × 100.</p>
+<p class="table-caption">Table 3. Test accuracy by number of labelled images per class. The difference row is in accuracy points.</p>
 
-<p>What I take from this:</p>
-<ul>
-  <li><strong>The priors help at every label budget, and most when labels are scarce</strong>: +11 points at 100 labels per class, shrinking to +1–2 points with full data. That is exactly the regime SSL is for.</li>
-  <li>They also beat the older lensing-specific Lens-JEPA by 13 to 30 points. To be fair, that model is much smaller (2.45M parameters vs 21.4M), so this mixes the loss with model size.</li>
-  <li>I-JEPA, pretrained for 3× longer, is ahead between 500 and 5,000 labels. I do not have a matched-budget I-JEPA run, so I cannot say whether that is the method or the extra compute.</li>
-  <li>At full data, AUROC tells a more mixed story: with plain LoRA, Lens-LeJEPA's mean AUROC (0.979) is actually a bit <em>below</em> LeJEPA's (0.986). With rsLoRA it reaches 0.993.</li>
-  <li>And supervised models, especially the physics-informed LensPINN, are still the best at every budget on this simulated data. The case for a foundation model here is label efficiency and reuse across tasks, not beating supervised accuracy.</li>
-</ul>
+<p>The two terms help at every label budget, and the gain is biggest when labels are scarce (+11 points with 100 labels per class). Lens-LeJEPA is 13 to 30 points ahead of Lens-JEPA, although Lens-JEPA is also a much smaller model. I-JEPA, which was trained for 3× longer, does better between 500 and 5,000 labels. The supervised models, LensPINN especially, are still the best on this simulated data.</p>
 
-<h3>Task 2: estimating the axion mass</h3>
+<h3>Axion mass regression</h3>
 
 <div class="table-wrap">
 <table>
-  <thead><tr><th>Mean absolute error (dex, lower is better)</th><th>Model II</th><th>Model III</th></tr></thead>
+  <thead><tr><th>Mean absolute error (dex) ↓</th><th>Model II</th><th>Model III</th></tr></thead>
   <tbody>
     <tr class="mine"><td>Lens-LeJEPA + rsLoRA</td><td>0.100</td><td>0.090</td></tr>
     <tr><td>Lens-LeJEPA + LoRA</td><td>0.149</td><td>0.109</td></tr>
-    <tr><td>LeJEPA + LoRA (no priors)</td><td>0.121</td><td>0.122</td></tr>
+    <tr><td>LeJEPA + LoRA</td><td>0.121</td><td>0.122</td></tr>
     <tr><td>LensPINN (supervised)</td><td>0.042</td><td>0.035</td></tr>
     <tr><td>ResNet18 (supervised)</td><td><strong>0.021</strong></td><td><strong>0.019</strong></td></tr>
   </tbody>
 </table>
 </div>
+<p class="table-caption">Table 4. Predicting \(\log_{10}\) of the axion mass.</p>
 
-<p>The frozen encoder is usable (R² = 0.937 on Model II with rsLoRA), but a supervised ResNet18 is about <strong>5× better</strong>. And here the priors do not clearly help: with the same LoRA adapter, Lens-LeJEPA is <em>worse</em> than LeJEPA on Model II (0.149 vs 0.121) and only better on Model III.</p>
+<p>The frozen encoder works (R² = 0.937 on Model II), but ResNet18 is about 5× more accurate. Here the two terms don't clearly help: with the same adapter, Lens-LeJEPA is worse than LeJEPA on Model II and better on Model III.</p>
 
 <figure>
-  <img src="assets/img/figF_regression.png" alt="Scatter plots of predicted vs true log axion mass for Lens-LeJEPA with rsLoRA (wider scatter) and ResNet18 (tight), and a bar chart of error by mass decile showing Lens-LeJEPA's error growing towards heavier masses." loading="lazy">
-  <figcaption>The frozen encoder follows the true mass across the whole range, but with much wider scatter than the supervised network, and its error grows about 4× from the lightest to the heaviest mass decile.</figcaption>
+  <img src="assets/img/figF_regression.png" alt="Predicted versus true log axion mass for Lens-LeJEPA and ResNet18, and error by mass decile." loading="lazy">
+  <figcaption><b>Figure 5.</b> Predicted vs. true mass, and the error for each mass range. The error of Lens-LeJEPA grows about 4× from the lightest to the heaviest axions.</figcaption>
 </figure>
 
-<p>I think the error pattern explains why. A heavier axion has a shorter wavelength, so its vortex pattern is <em>finer</em> and fainter. But my objective explicitly teaches the encoder to ignore blur and noise, which act on exactly those fine scales. So the encoder has partly learned to throw away the signal this task needs, and the error is worst for the heaviest masses.</p>
+<p>I think this is because heavier axions produce finer, fainter patterns, and my training explicitly teaches the model to ignore blur and noise, which affect exactly those fine details.</p>
 
-<h3>Task 3: 2× super-resolution</h3>
+<h3>2× super-resolution</h3>
 
-<p>Here I shrink each native 64 × 64 test image to 32 × 32 and ask the model to rebuild it. A light decoder turns each patch token back into a 16 × 16 block of pixels. This is a synthetic image-reconstruction task, not real physical resolution recovery, because the dataset has no true low/high-resolution pairs.</p>
+<p>For this task I shrink each 64 × 64 image to 32 × 32 and train a small decoder on top of the encoder to rebuild it. Since the dataset has no real low/high-resolution pairs, this measures image reconstruction, not a physical resolution gain.</p>
 
 <figure>
-  <img src="assets/img/fig5_sr_examples.png" alt="A held-out Model II lens: the target, then reconstructions by LeJEPA, Lens-LeJEPA, bicubic and RCAN, each followed by its absolute error map." loading="lazy">
-  <figcaption>One held-out Model II lens, each reconstruction followed by its error map on a shared scale. RCAN, trained from scratch for the same 50 epochs, did not converge.</figcaption>
+  <img src="assets/img/fig5_sr_examples.png" alt="A Model II test lens: target and reconstructions by LeJEPA, Lens-LeJEPA, bicubic and RCAN, each with an error map." loading="lazy">
+  <figcaption><b>Figure 6.</b> Reconstructions of one test image, each followed by its error map. RCAN, trained from scratch with the same budget, did not converge.</figcaption>
 </figure>
 
 <div class="table-wrap">
 <table>
-  <thead><tr><th>PSNR (dB, higher is better)</th><th>Model II</th><th>Model III</th></tr></thead>
+  <thead><tr><th>PSNR (dB) ↑</th><th>Model II</th><th>Model III</th></tr></thead>
   <tbody>
-    <tr><td>LeJEPA + LoRA (no priors)</td><td><strong>48.32</strong></td><td><strong>45.38</strong></td></tr>
+    <tr><td>LeJEPA + LoRA</td><td><strong>48.32</strong></td><td><strong>45.38</strong></td></tr>
     <tr class="mine"><td>Lens-LeJEPA + LoRA</td><td>44.70</td><td>42.50</td></tr>
-    <tr><td>Bicubic interpolation</td><td>41.07</td><td>40.27</td></tr>
-    <tr><td>RCAN (trained from scratch, same budget)</td><td>19.49</td><td>19.01</td></tr>
+    <tr><td>Bicubic</td><td>41.07</td><td>40.27</td></tr>
+    <tr><td>RCAN (from scratch)</td><td>19.49</td><td>19.01</td></tr>
   </tbody>
 </table>
 </div>
+<p class="table-caption">Table 5. Super-resolution quality.</p>
 
-<p>Both frozen encoders beat bicubic by a clear margin. But this time the priors <strong>cost</strong> 3.6 dB. It is the mirror image of the classification result.</p>
+<p>Both pretrained encoders beat bicubic, but here the two terms cost 3.6 dB.</p>
 
-<h2 id="lesson">8. The one lesson behind all of it</h2>
+<h2 id="discussion">8. Discussion</h2>
 
-<p>At first the three results looked contradictory: the priors help a lot on classification, hurt super-resolution, and do not help regression. I now think they all come from one thing.</p>
+<p>At first these results confused me: the same loss helps classification, hurts super-resolution and doesn't help regression. My explanation is that the two terms make the model invariant to rotation, blur and noise. For classification that is what we want, since the class doesn't depend on how the telescope was rotated. Super-resolution needs every pixel, and mass regression needs the finest texture, so throwing that information away hurts them.</p>
 
-<p><strong>My priors buy invariance.</strong> They teach the encoder that the orientation of the detector, and small blur and noise, do not matter. Whether that is good depends on the task:</p>
-<ul>
-  <li>A <strong>semantic</strong> task like "is this axion or CDM?" does not care how the detector was rotated. Invariance is exactly what it wants, and classification gains up to 11 points.</li>
-  <li>A <strong>reconstruction</strong> task needs every pixel, and an <strong>amplitude</strong> task like mass regression needs the finest texture. Invariance throws some of that away, so they lose.</li>
-</ul>
-
-<p>I can even see this in the features during pretraining, before any downstream task. Lens-LeJEPA ends with a lower effective rank (0.164 vs 0.213) and a lower feature spread than LeJEPA: its features are more compressed. Neither run collapsed, and both lensing terms fell by about two orders of magnitude, so the priors were being satisfied, not fought.</p>
+<p>You can already see this during pretraining. Lens-LeJEPA ends up with a lower effective rank than LeJEPA (0.164 vs 0.213), meaning its features are more compressed. Neither run collapsed, and both lensing terms went down steadily during training.</p>
 
 <figure>
-  <img src="assets/img/figB_pretraining_top.png" alt="Six training curves over 100 epochs comparing LeJEPA (teal) and Lens-LeJEPA (red): total objective, view-invariance term, SIGReg term, effective-rank fraction, feature standard deviation and cosine between views." loading="lazy">
-  <figcaption>Pretraining curves over 100 epochs, LeJEPA in teal and Lens-LeJEPA in red. Both are stable. The middle-left panel shows the cost of the priors: a lower effective rank of the pooled features.</figcaption>
+  <img src="assets/img/figB_pretraining_top.png" alt="Training curves over 100 epochs for LeJEPA (teal) and Lens-LeJEPA (red)." loading="lazy">
+  <figcaption><b>Figure 7.</b> Pretraining curves for LeJEPA (teal) and Lens-LeJEPA (red). Both train stably. The effective rank panel (middle left) shows Lens-LeJEPA's features are more compressed.</figcaption>
 </figure>
 
-<p>So my practical advice is: <strong>choose the pretraining objective per task</strong>. Use the geometry-aware encoder for classification and lens finding, and the plain encoder for continuous physical quantities.</p>
+<p>So which encoder to use depends on the task: Lens-LeJEPA for classification and lens finding, and plain LeJEPA for predicting continuous quantities like mass.</p>
 
-<h2 id="code">9. The code</h2>
-
-<p>I rewrote everything into a small, clean repository that goes with the paper. It is organised around <em>tasks</em>: each task says which data to load, how to split it, which head to use, the loss and the metrics, and one shared training loop does the rest. Adding a new task is one class.</p>
-
-<pre><code>lens-lejepa/
-├── lens_lejepa/
-│   ├── data/      # .npy loading, datasets, deterministic splits
-│   ├── models/    # ViT, heads, 7 adapter types, ResNet18 / RCAN / bicubic
-│   ├── ssl/       # SIGReg, lens-safe views, the two priors, the objective
-│   ├── tasks/     # classification, regression, super_resolution
-│   └── engine/    # pretraining loop, fine-tuning loop, evaluation
-├── configs/       # one YAML per experiment, defaults = paper settings
-├── scripts/       # reproduce_paper.sh, collect_results.py
-└── tests/         # 63 tests, incl. the D4 proofs checked pixel by pixel</code></pre>
-
-<pre><code># pretrain (about 6 GPU-hours on one RTX A4500)
-python -m lens_lejepa pretrain --config configs/pretrain/lens_lejepa.yaml
-
-# classification with 100 labels per class
-python -m lens_lejepa finetune --config configs/downstream/classification.yaml --set shots=100
-
-# evaluate any checkpoint on any test set
-python -m lens_lejepa evaluate --checkpoint runs/.../best.pt --test-root ../datasets/Model_III_test</code></pre>
-
-<p>To make sure the rewrite is faithful, I loaded my original checkpoints into the new code and re-ran the held-out evaluation. It gives back the paper's numbers exactly: 0.9768 accuracy for classification, 0.1001 dex for regression and 44.70 dB for super-resolution. I also checked that each loss term matches the original implementation on the same inputs.</p>
-
-<h2 id="next">10. Limitations and what comes next</h2>
+<h2 id="future">9. Future work</h2>
 
 <ul>
-  <li><strong>Everything is simulation.</strong> Real survey images have unknown blur, blending and lens-light subtraction. The obvious next step is to pretrain on real unlabelled cutouts and test on the small set of confirmed real lenses.</li>
-  <li><strong>One seed, one budget.</strong> Each encoder was trained once. Differences below about one point (for example rsLoRA vs full fine-tuning) should not be over-read.</li>
-  <li><strong>The two priors were always used together.</strong> I cannot yet say how the gain splits between them, or whether 0.10 is the best weight.</li>
-  <li><strong>Equivariance is learned, not built in.</strong> The ViT's position embedding is not rotation-symmetric, so the encoder is only approximately equivariant. A hard-equivariant backbone could close that gap, if it is done one change at a time this time.</li>
-  <li><strong>Regression and super-resolution were only run with full data.</strong> I would like to know if the priors help them in the low-label regime.</li>
+  <li>Everything here is simulated. The next step is to pretrain on real survey images and test on known real lenses.</li>
+  <li>Each model was trained once with one seed, so small differences (under about one point) shouldn't be taken too seriously.</li>
+  <li>I always used both terms together. Testing them separately would show how much each one contributes.</li>
+  <li>The ViT only learns to be rotation-equivariant; a model with rotation equivariance built in might close the remaining gap.</li>
+  <li>I only ran regression and super-resolution with all labels. It would be interesting to see what happens with fewer.</li>
 </ul>
+
+<h2 id="code">10. Code</h2>
+
+<a class="code-link" href="https://github.com/arnesh2212/Lens-FM-DeepLense">
+  <svg width="28" height="28" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+  <span><span class="repo">arnesh2212/Lens-FM-DeepLense</span><span class="desc">Pretraining, the three downstream tasks and configs for every experiment in this post.</span></span>
+</a>
 
 <h2>Acknowledgements</h2>
 
-<p>I am very grateful to my mentors at ML4SCI and the DeepLense team for their guidance, patience and honest feedback all summer, and to Google Summer of Code for making this possible. This project also builds directly on the open work of the DeepLense contributors before me, especially Lens-JEPA, Lensiformer and LensPINN.</p>
+<p>Thanks to my mentors at ML4SCI and the DeepLense team for their guidance and feedback during the summer, and to Google Summer of Code for the opportunity. This work builds on earlier DeepLense projects, especially Lens-JEPA, Lensiformer and LensPINN.</p>
 
 <h2 id="refs">References</h2>
 <ol class="refs">
@@ -355,13 +318,14 @@ python -m lens_lejepa evaluate --checkpoint runs/.../best.pt --test-root ../data
   <li>E. J. Hu et al. <em>LoRA: Low-Rank Adaptation of Large Language Models.</em> ICLR 2022. <a href="https://arxiv.org/abs/2106.09685">arXiv:2106.09685</a></li>
   <li>S. Alexander, S. Gleyzer, E. McDonough, M. W. Toomey et al. <em>Deep Learning the Morphology of Dark Matter Substructure.</em> The Astrophysical Journal, 2020. <a href="https://arxiv.org/abs/1909.07346">arXiv:1909.07346</a></li>
   <li>S. Birrer, A. Amara. <em>lenstronomy: Multi-purpose gravitational lens modelling software package.</em> Physics of the Dark Universe, 2018. <a href="https://arxiv.org/abs/1803.09746">arXiv:1803.09746</a></li>
-  <li>ML4SCI DeepLense repository: <a href="https://github.com/ML4SCI/DeepLense">github.com/ML4SCI/DeepLense</a></li>
 </ol>
 
+</article>
+</main>
+
 <footer>
-  Written by Arnesh for Google Summer of Code 2026 with <a href="https://ml4sci.org/">ML4SCI</a>. All numbers are held-out test results from single-seed runs on the DeepLense simulations.
+  <div>Arnesh · Google Summer of Code 2026 with <a href="https://ml4sci.org/">ML4SCI</a></div>
 </footer>
 
-</main>
 </body>
 </html>
