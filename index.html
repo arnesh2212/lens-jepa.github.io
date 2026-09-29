@@ -258,7 +258,7 @@
 
 <h3>Do we even need an adapter?</h3>
 
-<p>One reviewer asked a good question: how much of this comes from the pretrained features themselves, and how much from the adapter? To check, I froze each encoder completely and trained only a logistic regression on its average feature, choosing the regularisation on the validation set.</p>
+<p>A natural question is how much of this comes from the pretrained features themselves, and how much from the adapter. To check, I froze each encoder completely and trained only a logistic regression on its average feature, choosing the regularisation on the validation set.</p>
 
 <div class="table-wrap">
 <table>
@@ -376,7 +376,7 @@
 
 <h3>Is it robust to real-world imperfections?</h3>
 
-<p>Two reviewers pointed out that both priors assume a perfectly centred lens, and that real images have leftover light from the lens galaxy after it is subtracted. I tested both on 3,000 test images, shifting each lens by a few pixels, or adding a smooth residual (a bright core with a dark ring) at the centre.</p>
+<p>Both priors assume a perfectly centred lens, and real images always have some leftover light from the lens galaxy after it is subtracted. I tested both on 3,000 test images, shifting each lens by a few pixels, or adding a smooth residual (a bright core with a dark ring) at the centre.</p>
 
 <figure>
   <div class="frame"><img src="assets/img/chart_robustness.png" alt="Two line charts of Model II test accuracy. Left: shifting the lens by one pixel drops all ViT-based classifiers to near chance, while ResNet18 stays at 1.0 and the shift-trained Lens-LeJEPA stays above 0.92 up to two pixels. Right: a lens-light residual of 5% of the brightness range brings every model close to chance."></div>
