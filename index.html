@@ -50,7 +50,7 @@
   <div class="kicker"><span class="dot"></span><span>Google Summer of Code 2026 · ML4SCI · DeepLense</span></div>
   <h1>Lens-LeJEPA: Self-Supervised Learning for Dark Matter Substructure</h1>
   <p class="lede">My Google Summer of Code 2026 project with ML4SCI DeepLense.</p>
-  <div class="post-meta"><span>Arnesh Batra</span><span>September 2026</span><span>20 min read</span></div>
+  <div class="post-meta"><span>Arnesh Batra</span><span>September 2026</span><span>24 min read</span></div>
 </header>
 
 <div class="hero"><img src="assets/img/hero.png" alt="Eight simulated strong lens images from the Model III test set, shown as glowing rings."></div>
@@ -256,6 +256,26 @@
   <figcaption><b>Figure 7.</b> Confusion matrices on the full Model II test set, rows normalised. Going from LeJEPA + LoRA to Lens-LeJEPA + rsLoRA, axions mistaken for CDM drop from 11.7% to 2.5%.</figcaption>
 </figure>
 
+<h3>Do we even need an adapter?</h3>
+
+<p>One reviewer asked a good question: how much of this comes from the pretrained features themselves, and how much from the adapter? To check, I froze each encoder completely and trained only a logistic regression on its average feature, choosing the regularisation on the validation set.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Model II accuracy</th><th>100</th><th>500</th><th>1k</th><th>5k</th><th>full</th></tr></thead>
+  <tbody>
+    <tr><td>LeJEPA, frozen + linear classifier</td><td>0.385</td><td>0.592</td><td>0.650</td><td>0.746</td><td>0.793</td></tr>
+    <tr class="mine"><td>Lens-LeJEPA, frozen + linear classifier</td><td>0.561</td><td>0.757</td><td>0.792</td><td>0.842</td><td>0.865</td></tr>
+    <tr><td>Lens-LeJEPA + rsLoRA</td><td>0.482</td><td>0.719</td><td>0.797</td><td>0.899</td><td>0.977</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="table-caption">Table 4. A linear classifier on frozen features against the full adapter.</p>
+
+<p>This surprised me twice. First, with 100 or 500 labels per class, the simple linear classifier on Lens-LeJEPA is <em>better</em> than the adapter: training 2.36M adapter weights on 300 images overfits, while a linear classifier cannot. The adapter only pays off from about 1,000 labels per class upward.</p>
+
+<p>Second, without an adapter the effect of the two lensing terms is much bigger: +17.6 points at 100 labels, +16.5 at 500, +14.2 at 1k, and still +7.1 with all the labels (and +9.7 on Model III). With LoRA the gap was +11.0 shrinking to +1.7, because the adapter can partly make up for weaker features during training. Measured on the frozen features themselves, the priors clearly make the class information easier to read out.</p>
+
 <h3>Axion mass regression</h3>
 
 <div class="table-wrap">
@@ -264,15 +284,17 @@
   <tbody>
     <tr class="mine"><td>Lens-LeJEPA + rsLoRA</td><td>0.100</td><td>0.090</td></tr>
     <tr><td>Lens-LeJEPA + LoRA</td><td>0.149</td><td>0.109</td></tr>
+    <tr><td>Lens-LeJEPA, full fine-tuning</td><td>0.099</td><td>0.101</td></tr>
     <tr><td>LeJEPA + LoRA</td><td>0.121</td><td>0.122</td></tr>
+    <tr><td>LeJEPA, full fine-tuning</td><td>0.095</td><td>0.085</td></tr>
     <tr><td>LensPINN (supervised)</td><td>0.042</td><td>0.035</td></tr>
     <tr><td>ResNet18 (supervised)</td><td><strong>0.021</strong></td><td><strong>0.019</strong></td></tr>
   </tbody>
 </table>
 </div>
-<p class="table-caption">Table 4. Predicting \(\log_{10}\) of the axion mass.</p>
+<p class="table-caption">Table 5. Predicting \(\log_{10}\) of the axion mass.</p>
 
-<p>The frozen encoder works (R² = 0.937 on Model II), but ResNet18 is about 5× more accurate. Here the two terms don't clearly help: with the same adapter, Lens-LeJEPA is worse than LeJEPA on Model II and better on Model III.</p>
+<p>The frozen encoder works (R² = 0.937 on Model II), but ResNet18 is about 5× more accurate. Here the two terms don't clearly help: with the same adapter, Lens-LeJEPA is worse than LeJEPA on Model II and better on Model III. I also tried unfreezing the whole encoder. It barely helps: both encoders stay around 0.1 dex, and LeJEPA is now slightly ahead of Lens-LeJEPA on both datasets.</p>
 
 <figure>
   <div class="frame"><img src="assets/img/figF_regression.png" alt="Predicted versus true log axion mass for Lens-LeJEPA and ResNet18, and error by mass decile."></div>
@@ -294,16 +316,29 @@
 <table>
   <thead><tr><th>PSNR (dB) ↑</th><th>Model II</th><th>Model III</th></tr></thead>
   <tbody>
-    <tr><td>RCAN (supervised, from scratch)</td><td><strong>65.12</strong></td><td><strong>61.41</strong></td></tr>
+    <tr><td>EDSR (supervised)</td><td><strong>67.07</strong></td><td><strong>62.62</strong></td></tr>
+    <tr><td>RCAN (supervised)</td><td>65.12</td><td>61.41</td></tr>
+    <tr><td>SRResNet (supervised)</td><td>61.53</td><td>60.63</td></tr>
+    <tr><td>FSRCNN (supervised, 12k parameters)</td><td>51.60</td><td>46.56</td></tr>
+    <tr class="mine"><td>Lens-LeJEPA, full fine-tuning</td><td>51.01</td><td>48.23</td></tr>
     <tr><td>LeJEPA + LoRA</td><td>48.32</td><td>45.38</td></tr>
     <tr class="mine"><td>Lens-LeJEPA + LoRA</td><td>44.70</td><td>42.50</td></tr>
     <tr><td>Bicubic</td><td>41.07</td><td>40.27</td></tr>
   </tbody>
 </table>
 </div>
-<p class="table-caption">Table 5. Super-resolution quality.</p>
+<p class="table-caption">Table 6. Super-resolution quality.</p>
 
-<p>Both pretrained encoders beat bicubic, but a supervised RCAN trained on the same data is far better, just like the supervised models on the other two tasks. Between the two encoders, the lensing terms cost 3.6 dB, the opposite of what they do for classification.</p>
+<p>Both pretrained encoders beat bicubic, but every proper super-resolution network trained from scratch on the same data is better, and three of them by more than 10 dB. Even FSRCNN, with only 12 thousand parameters, beats a frozen 21-million-parameter encoder. Fine-tuning the whole encoder helps (51.0 dB) but does not close the gap. Between the two encoders, the lensing terms cost 3.6 dB, the opposite of what they do for classification.</p>
+
+<figure>
+  <div class="frame"><img src="assets/img/chart_sr_all.png" alt="PSNR on the Model II test set for every method: EDSR 67.1, RCAN 65.1, SRResNet 61.5, FSRCNN 51.6, Lens-LeJEPA full fine-tuning 51.0, LeJEPA LoRA 48.3, Lens-LeJEPA LoRA 44.7, bicubic 41.1 dB."></div>
+  <figcaption><b>Figure 10.</b> Every super-resolution method on the Model II test set. Supervised networks in grey, my encoders in blue, the LeJEPA control in orange.</figcaption>
+</figure>
+
+<h3>Does full fine-tuning beat the baselines?</h3>
+
+<p>No. I fine-tuned every weight of both encoders on all three tasks to check whether the frozen setup was holding them back. For classification, full fine-tuning reaches 0.975 on Model II, about the same as rsLoRA and still below ResNet18 and LensPINN (both ≈1.000). For regression it stays near 0.1 dex against 0.021 for ResNet18, and for super-resolution it reaches 51.0 dB against 67.1 for EDSR. On these simulations, with all the labels available, a supervised model trained for the task wins every time. The case for a pretrained encoder is the low-label regime and reusing one model for several tasks.</p>
 
 <h2 id="analysis"><span class="num">08</span>A closer look at the features</h2>
 
@@ -315,16 +350,16 @@
 
 <figure>
   <div class="frame"><img src="assets/img/analysis_equivariance.png" alt="Three bar charts comparing LeJEPA and Lens-LeJEPA: patch-matching error after rotation 0.465 vs 0.000, pooled-feature cosine 0.35 vs 1.00, position-only share of token variance 7% vs 47%."></div>
-  <figcaption><b>Figure 10.</b> Measured on 3,000 Model II test images with the frozen encoders. Left and middle: Lens-LeJEPA is exactly rotation-equivariant, LeJEPA is not. Right: how much of each token is a fixed pattern that is the same for every image.</figcaption>
+  <figcaption><b>Figure 11.</b> Measured on 3,000 Model II test images with the frozen encoders. Left and middle: Lens-LeJEPA is exactly rotation-equivariant, LeJEPA is not. Right: how much of each token is a fixed pattern that is the same for every image.</figcaption>
 </figure>
 
 <h3>How it became equivariant</h3>
 
-<p>The right panel above was the surprise. I split every token into two parts: the average token at that position over all images, which only depends on <em>where</em> the patch is, and the rest, which depends on the image. In LeJEPA only 7% of the token variance is this position-only part. In Lens-LeJEPA it is 47%, and 99.7% of it is symmetric under rotations and flips.</p>
+<p>The right panel above was the surprise. I split every token into two parts: the average token at that position over all images, which only depends on <em>where</em> the patch is, and the rest, which depends on the image. In LeJEPA only 7% of the token variance is this position-only part. In Lens-LeJEPA it is 47%, and 99.8% of it is symmetric under rotations and flips.</p>
 
 <figure>
   <div class="frame"><img src="assets/img/analysis_radial_field.png" alt="Scatter plot of the size of the position-only part of each token against the patch's distance from the centre, for LeJEPA and Lens-LeJEPA. Lens-LeJEPA's values are larger and depend on the radius."></div>
-  <figcaption><b>Figure 11.</b> The size of the position-only part of each token against the distance of its patch from the centre. In Lens-LeJEPA it is large and depends mostly on the radius.</figcaption>
+  <figcaption><b>Figure 12.</b> The size of the position-only part of each token against the distance of its patch from the centre. In Lens-LeJEPA it is large and depends mostly on the radius.</figcaption>
 </figure>
 
 <p>So about half of each Lens-LeJEPA token is a fixed pattern that mostly encodes how far the patch is from the centre. A pattern like that satisfies both of my loss terms for free: it is the same for every image, it does not change under rotation, and it is constant inside each ring. That leaves less room in each token for the image itself. I think this is the real cost of the priors, and it fits everything else: the lower effective rank during pretraining, the 3.6 dB loss in super-resolution and the weaker mass regression.</p>
@@ -333,10 +368,23 @@
 
 <figure>
   <div class="frame"><img src="assets/img/analysis_tsne.png" alt="Two t-SNE plots of frozen pooled features for 3,000 Model II test images coloured by class; in both, axion, CDM and no-substructure points are mixed."></div>
-  <figcaption><b>Figure 12.</b> t-SNE of the frozen, pooled features of 1,000 test images per class. Neither encoder separates the classes on its own.</figcaption>
+  <figcaption><b>Figure 13.</b> t-SNE of the frozen, pooled features of 1,000 test images per class. Neither encoder separates the classes on its own.</figcaption>
 </figure>
 
-<p>Not really. In both encoders the three classes are mixed together. The difference between classes is a small change in the arcs, and it only becomes separable after the adapter is trained with labels. This is the same thing the linear probes showed at the start of the project.</p>
+<p>Not as clusters. In both encoders the three classes are mixed together in the t-SNE map, because the biggest differences between images are things like brightness and ring size, not substructure. But the class information is there: the linear classifier from the table above reaches 86% on these same frozen features. It lives in a few directions of the feature space rather than in the overall layout.</p>
+
+<h3>Is it robust to real-world imperfections?</h3>
+
+<p>Two reviewers pointed out that both priors assume a perfectly centred lens, and that real images have leftover light from the lens galaxy after it is subtracted. I tested both on 3,000 test images, shifting each lens by a few pixels, or adding a smooth residual (a bright core with a dark ring) at the centre.</p>
+
+<figure>
+  <div class="frame"><img src="assets/img/chart_robustness.png" alt="Two line charts of Model II test accuracy. Left: shifting the lens by one pixel drops all ViT-based classifiers to near chance, while ResNet18 stays at 1.0 and the shift-trained Lens-LeJEPA stays above 0.92 up to two pixels. Right: a lens-light residual of 5% of the brightness range brings every model close to chance."></div>
+  <figcaption><b>Figure 14.</b> Model II test accuracy when the lens is shifted (left) or when leftover lens-galaxy light is added (right).</figcaption>
+</figure>
+
+<p>The shift result was alarming. Moving the lens by just <strong>one pixel</strong> drops Lens-LeJEPA from 97.5% to 36%, basically chance. But it is not caused by my priors: LeJEPA and even the fully supervised ViT fail the same way, while ResNet18, a CNN, does not care at all. A ViT trained only on perfectly centred images learns to rely on exact positions. The fix is simple: fine-tuning the adapter with random shifts of up to two pixels keeps accuracy at 92% for shifts of one or two pixels, at the cost of about 5 points on perfectly centred images.</p>
+
+<p>Leftover lens light is harder, and it breaks every model. At 2% of the brightness range most models lose a quarter to a third of their accuracy, and at 5% all of them are close to chance. The physics-informed supervised models (LensPINN and Lensiformer) are the most fragile and fail at just 0.5%. The dark matter signal in these simulations is a tiny change in the arcs, small enough that realistic imperfections can hide it. This is the most important thing to fix before using any of these models on real survey images.</p>
 
 <h2 id="discussion"><span class="num">09</span>Discussion</h2>
 
@@ -346,7 +394,7 @@
 
 <figure>
   <div class="frame"><img src="assets/img/figB_pretraining_top.png" alt="Training curves over 100 epochs for LeJEPA (teal) and Lens-LeJEPA (red)."></div>
-  <figcaption><b>Figure 13.</b> Pretraining curves for LeJEPA (teal) and Lens-LeJEPA (red). Both train stably. The effective rank panel (middle left) shows Lens-LeJEPA's features are more compressed.</figcaption>
+  <figcaption><b>Figure 15.</b> Pretraining curves for LeJEPA (teal) and Lens-LeJEPA (red). Both train stably. The effective rank panel (middle left) shows Lens-LeJEPA's features are more compressed.</figcaption>
 </figure>
 
 <p>So which encoder to use depends on the task: Lens-LeJEPA for classification and lens finding, and plain LeJEPA for predicting continuous quantities like mass.</p>
@@ -355,6 +403,7 @@
 
 <ul>
   <li>Everything here is simulated. The next step is to pretrain on real survey images and test on known real lenses.</li>
+  <li>Real images are never perfectly centred and always have some lens-galaxy light left over. Shift augmentation fixes the first; the second needs lens-light modelling or training with realistic residuals.</li>
   <li>Each model was trained once with one seed, so small differences (under about one point) shouldn't be taken too seriously.</li>
   <li>I always used both terms together. Testing them separately would show how much each one contributes.</li>
   <li>The ViT only learns to be rotation-equivariant; a model with rotation equivariance built in might close the remaining gap.</li>
