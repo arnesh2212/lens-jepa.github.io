@@ -321,6 +321,7 @@
     <tr><td>SRResNet (supervised)</td><td>61.53</td><td>60.63</td></tr>
     <tr><td>FSRCNN (supervised, 12k parameters)</td><td>51.60</td><td>46.56</td></tr>
     <tr class="mine"><td>Lens-LeJEPA, full fine-tuning</td><td>51.01</td><td>48.23</td></tr>
+    <tr><td>LeJEPA, full fine-tuning</td><td>50.88</td><td>47.82</td></tr>
     <tr><td>LeJEPA + LoRA</td><td>48.32</td><td>45.38</td></tr>
     <tr class="mine"><td>Lens-LeJEPA + LoRA</td><td>44.70</td><td>42.50</td></tr>
     <tr><td>Bicubic</td><td>41.07</td><td>40.27</td></tr>
@@ -329,7 +330,7 @@
 </div>
 <p class="table-caption">Table 6. Super-resolution quality.</p>
 
-<p>Both pretrained encoders beat bicubic, but every proper super-resolution network trained from scratch on the same data is better, and three of them by more than 10 dB. Even FSRCNN, with only 12 thousand parameters, beats a frozen 21-million-parameter encoder. Fine-tuning the whole encoder helps (51.0 dB) but does not close the gap. Between the two encoders, the lensing terms cost 3.6 dB, the opposite of what they do for classification.</p>
+<p>Both pretrained encoders beat bicubic, but every proper super-resolution network trained from scratch on the same data is better, and three of them by more than 10 dB. Even FSRCNN, with only 12 thousand parameters, beats a frozen 21-million-parameter encoder. Between the two frozen encoders, the lensing terms cost 3.6 dB, the opposite of what they do for classification. Fine-tuning the whole encoder helps both (51.0 dB for Lens-LeJEPA, 50.9 dB for LeJEPA) and removes that cost, but does not close the gap to the supervised networks.</p>
 
 <figure>
   <div class="frame"><img src="assets/img/chart_sr_all.png" alt="PSNR on the Model II test set for every method: EDSR 67.1, RCAN 65.1, SRResNet 61.5, FSRCNN 51.6, Lens-LeJEPA full fine-tuning 51.0, LeJEPA LoRA 48.3, Lens-LeJEPA LoRA 44.7, bicubic 41.1 dB."></div>
